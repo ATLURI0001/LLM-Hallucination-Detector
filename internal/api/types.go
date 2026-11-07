@@ -1,6 +1,6 @@
 package api
 
-import "github.com/user/llm-hallucination-detector/internal/models"
+import "github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 
 // VerifyRequest payload for the /api/v1/verify endpoint
 type VerifyRequest struct {

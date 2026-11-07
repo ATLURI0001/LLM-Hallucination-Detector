@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/user/llm-hallucination-detector/internal/claim"
-	"github.com/user/llm-hallucination-detector/internal/document"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/claim"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/document"
 )
 
 // Detector coordinates claim extraction, document retrieval, and veracity verification.

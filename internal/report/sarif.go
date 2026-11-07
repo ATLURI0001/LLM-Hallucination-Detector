@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/user/llm-hallucination-detector/internal/models"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 )
 
 // SarifReport conforms to the OASIS Static Analysis Results Interchange Format (SARIF) v2.1.0.
@@ -74,7 +74,7 @@ func FormatSARIF(res *models.VerificationResult, filename string) (string, error
 					Driver: SarifDriver{
 						Name:           "LLM-Hallucination-Detector",
 						Version:        "1.0.0",
-						InformationURI: "https://github.com/user/llm-hallucination-detector",
+						InformationURI: "https://github.com/ATLURI0001/llm-hallucination-detector",
 						Rules: []SarifRule{
 							{
 								ID:   "LLM001",

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/user/llm-hallucination-detector/internal/models"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 )
 
 var (

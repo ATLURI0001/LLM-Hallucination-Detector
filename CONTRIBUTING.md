@@ -14,7 +14,7 @@ Thank you for your interest in contributing to **VeriFact / HalluciDetect**! We 
 1. **Fork the repository** on GitHub.
 2. **Clone your fork** locally:
    ```bash
-   git clone https://github.com/<your-username>/llm-hallucination-detector.git
+   git clone https://github.com/ATLURI0001/llm-hallucination-detector.git
    cd llm-hallucination-detector
    ```
 3. **Verify the test suite**:

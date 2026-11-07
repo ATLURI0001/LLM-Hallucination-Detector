@@ -5,9 +5,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/user/llm-hallucination-detector/internal/claim"
-	"github.com/user/llm-hallucination-detector/internal/engine"
-	"github.com/user/llm-hallucination-detector/internal/models"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/claim"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/engine"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 )
 
 // Handler manages the REST API endpoints.

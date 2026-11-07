@@ -9,11 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/user/llm-hallucination-detector/internal/api"
-	"github.com/user/llm-hallucination-detector/internal/engine"
-	"github.com/user/llm-hallucination-detector/internal/models"
-	"github.com/user/llm-hallucination-detector/internal/report"
-	"github.com/user/llm-hallucination-detector/internal/web"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/api"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/engine"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/models"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/report"
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/web"
 )
 
 const (

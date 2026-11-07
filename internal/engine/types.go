@@ -1,6 +1,6 @@
 package engine
 
-import "github.com/user/llm-hallucination-detector/internal/models"
+import "github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 
 // Re-export core types from models package for package-level convenience
 type (

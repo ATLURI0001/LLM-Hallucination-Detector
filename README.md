@@ -97,7 +97,7 @@ Every claim evaluated by VeriFact is categorized under a fine-grained failure ta
 
 ### From Source (Go 1.22+)
 ```bash
-git clone https://github.com/user/llm-hallucination-detector.git
+git clone https://github.com/ATLURI0001/llm-hallucination-detector.git
 cd llm-hallucination-detector
 go build -o hallucidetect ./cmd/hallucidetect
 ```
