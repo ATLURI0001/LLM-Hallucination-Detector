@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VeriFact | LLM Hallucination & Fact Verification Engine</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Navigation Header -->
+  <header class="navbar">
+    <div class="brand">
+      <span class="brand-icon">🛡️</span>
+      <div>
+        <div class="brand-title">VeriFact Engine</div>
+      </div>
+      <span class="brand-badge">v1.0.0</span>
+    </div>
+
+    <div class="nav-actions">
+      <span style="font-size: 0.85rem; color: var(--text-muted);">Demonstration Presets:</span>
+      <select id="preset-select" class="preset-select">
+        <option value="financial">📊 Financial Earnings (Numeric Mismatch)</option>
+        <option value="medical">🧪 Clinical Trial (Polarity Contradiction)</option>
+        <option value="tech">⚙️ Hardware Specs (Entity Fabrication)</option>
+      </select>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="container">
+    <!-- Editor Grid -->
+    <section class="editor-grid">
+      <!-- Left: Source Documents -->
+      <div class="editor-pane">
+        <div class="pane-header">
+          <div class="pane-title">
+            <span>📚</span>
+            <span>Trusted Source Documents</span>
+          </div>
+          <span class="pane-desc">Ground truth baseline (text, docs, reports)</span>
+        </div>
+        <textarea id="source-input" class="editor-input" placeholder="Paste trusted reference documents, ground truth facts, or knowledge base context here..."></textarea>
+      </div>
+
+      <!-- Right: AI Generated Answer -->
+      <div class="editor-pane">
+        <div class="pane-header">
+          <div class="pane-title">
+            <span>🤖</span>
+            <span>AI-Generated Response</span>
+          </div>
+          <span class="pane-desc">Answer to audit for hallucinations</span>
+        </div>
+        <textarea id="answer-input" class="editor-input" placeholder="Paste the LLM-generated response, summary, or claims to verify..."></textarea>
+      </div>
+    </section>
+
+    <!-- Controls Bar -->
+    <section class="control-bar">
+      <div class="control-options">
+        <div class="control-item">
+          <label for="threshold-slider"><strong>Strictness Threshold:</strong> <span id="threshold-val">0.65</span></label>
+          <input type="range" id="threshold-slider" min="0.4" max="0.95" step="0.05" value="0.65">
+        </div>
+        <div class="control-item">
+          <label>
+            <input type="checkbox" id="strict-numeric" checked>
+            <strong>Strict Numeric Discrepancy Flagging</strong>
+          </label>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 0.75rem; align-items: center;">
+        <button id="clear-btn" class="btn-secondary">Clear</button>
+        <button id="verify-btn" class="btn-primary">
+          <span>🔍</span>
+          <span>Run Hallucination Detector</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Results Card -->
+    <section id="results-card" class="results-card">
+      <div class="results-header">
+        <div class="hero-verdict">
+          <div id="verdict-badge" class="verdict-badge verdict-reliable">🛡️ RELIABLE ANSWER</div>
+          <div id="verdict-summary" style="font-size: 0.95rem; color: var(--text-muted);">Audit summary will appear here</div>
+        </div>
+      </div>
+
+      <!-- Metric Boxes Grid -->
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <div id="metric-faithfulness" class="metric-val" style="color: #34d399;">100%</div>
+          <div class="metric-label">Faithfulness Index</div>
+        </div>
+        <div class="metric-box">
+          <div id="metric-hallucination" class="metric-val" style="color: #f87171;">0%</div>
+          <div class="metric-label">Hallucination Rate</div>
+        </div>
+        <div class="metric-box">
+          <div id="metric-claims-count" class="metric-val" style="color: #60a5fa;">0</div>
+          <div class="metric-label">Claims Extracted</div>
+        </div>
+        <div class="metric-box">
+          <div id="metric-time" class="metric-val" style="color: #a78bfa;">0 ms</div>
+          <div class="metric-label">Verification Time</div>
+        </div>
+      </div>
+
+      <!-- Interactive Highlighted Text -->
+      <div class="highlight-section">
+        <div class="section-title">
+          <span>🎯</span>
+          <span>Interactive Visual Grounding Map</span>
+          <span style="font-size: 0.75rem; font-weight: normal; color: var(--text-muted); margin-left: 8px;">(Click any claim to inspect source citation)</span>
+        </div>
+        <div id="highlighted-text" class="highlighted-content"></div>
+      </div>
+
+      <!-- Filterable Claims Table -->
+      <div class="claims-table-section">
+        <div class="section-title">
+          <span>📋</span>
+          <span>Atomic Claims Breakdown</span>
+        </div>
+
+        <div class="table-filter-bar">
+          <button class="filter-tab active" data-filter="ALL">All Claims</button>
+          <button class="filter-tab" data-filter="SUPPORTED">🟢 Supported</button>
+          <button class="filter-tab" data-filter="CONTRADICTED">🔴 Contradicted</button>
+          <button class="filter-tab" data-filter="UNSUPPORTED">🟡 Unsupported</button>
+          <button class="filter-tab" data-filter="PARTIALLY_SUPPORTED">🔵 Partial</button>
+        </div>
+
+        <table class="claims-table">
+          <thead>
+            <tr>
+              <th style="width: 50px;">ID</th>
+              <th>Extracted Claim Proposition</th>
+              <th style="width: 130px;">Status</th>
+              <th style="width: 150px;">Failure Taxonomy</th>
+              <th style="width: 100px;">Confidence</th>
+              <th>Grounding Evidence Passage</th>
+            </tr>
+          </thead>
+          <tbody id="claims-tbody"></tbody>
+        </table>
+      </div>
+
+      <!-- Export Actions -->
+      <div class="export-actions">
+        <button id="export-md-btn" class="btn-secondary">📋 Export Markdown Report</button>
+        <button id="export-json-btn" class="btn-secondary">💾 Export JSON Results</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

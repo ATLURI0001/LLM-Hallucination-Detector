@@ -1,0 +1,5 @@
+Clinical trial Phase III (NCT04829104) evaluated the efficacy of CardioGuard in 2,400 adult patients with stage 2 hypertension.
+The primary endpoint was a reduction in systolic blood pressure after 12 weeks.
+CardioGuard demonstrated a statistically significant mean reduction of 18.4 mmHg compared to 5.2 mmHg for placebo (p < 0.001).
+Adverse event rates were comparable to placebo (4.2% vs 3.9%), with mild headache being the most commonly reported side effect.
+The trial did not find any evidence of hepatotoxicity or renal impairment.

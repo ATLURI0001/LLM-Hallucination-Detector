@@ -1,0 +1,4 @@
+The Kestrel-9 processor features an 8-core RISC-V cluster running at 3.2 GHz.
+It includes 32MB of shared L3 cache and was fabricated on TSMC's 4nm process.
+The chip features an integrated Quantum Coprocessor capable of 1,000 qubits.
+The Thermal Design Power of the chip is 180W.

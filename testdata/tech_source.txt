@@ -1,0 +1,4 @@
+The Kestrel-9 architecture utilizes an 8-core RISC-V compute cluster operating at a base frequency of 3.2 GHz.
+It features 32MB of shared L3 cache and supports quad-channel DDR5-5600 memory with maximum bandwidth of 142 GB/s.
+Fabricated on TSMC's 4nm FinFET process, the chip has a Thermal Design Power (TDP) of 65W.
+The integrated Neural Processing Unit delivers up to 45 TOPS of INT8 inference throughput.

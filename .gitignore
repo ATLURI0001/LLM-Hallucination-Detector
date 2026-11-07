@@ -1,0 +1,21 @@
+# Binaries
+/hallucidetect
+/hallucidetect.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+dist/
+*.out
+*.test
+*.prof
+
+# OS & Editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.zip
