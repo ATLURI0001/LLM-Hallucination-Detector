@@ -1,0 +1,30 @@
+name: 💡 Feature Request
+description: Propose an idea or enhancement for VeriFact
+title: "[FEATURE] <concise description>"
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Have an idea for improving claim extraction, verification heuristics, or output formats? Let us know!
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Limitation
+      description: Is your feature request related to a specific problem or missing capability?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution or workflow you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or workarounds you considered.
+    validations:
+      required: false

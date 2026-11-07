@@ -1,6 +1,8 @@
 # 🛡️ VeriFact / HalluciDetect
 
 [![CI Pipeline](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
+[![Security Policy](https://img.shields.io/badge/security-monitored-blue.svg)](SECURITY.md)
+[![CodeQL Analysis](https://img.shields.io/badge/codeql-scanned-success.svg)]()
 [![Go Version](https://img.shields.io/badge/go-1.22%20%7C%201.23-blue.svg)](https://golang.org)
 [![Accuracy Benchmark](https://img.shields.io/badge/benchmark-100%25%20accuracy-success.svg)]()
 [![License](https://img.shields.io/badge/license-MIT-purple.svg)](LICENSE)
@@ -250,9 +252,16 @@ Benchmark Complete: 3/3 test suites passed (100% accuracy).
 
 ```
 .
+├── .github/
+│   ├── workflows/
+│   │   ├── ci.yml               # Matrix CI: tests, race checks, cross-platform builds
+│   │   └── security.yml         # CodeQL static analysis & Gosec scanning
+│   ├── ISSUE_TEMPLATE/          # Bug report & feature request templates
+│   ├── PULL_REQUEST_TEMPLATE.md # PR checklist & review guidelines
+│   └── dependabot.yml           # Automated dependency & action security bumps
 ├── cmd/
 │   └── hallucidetect/
-│       └── main.go              # CLI entrypoint & subcommands
+│       └── main.go              # CLI tool, flags, and subcommands
 ├── internal/
 │   ├── api/                     # REST API handlers, routing, CORS
 │   ├── claim/                   # Claim extraction & proposition decomposition
@@ -262,13 +271,31 @@ Benchmark Complete: 3/3 test suites passed (100% accuracy).
 │   ├── report/                  # Terminal, Markdown, JSON, SARIF formatters
 │   └── web/                     # Embedded static UI (HTML, CSS, JS)
 ├── testdata/                    # Benchmark sample datasets
-├── .github/workflows/           # GitHub Actions CI matrix
 ├── Dockerfile                   # Multi-stage scratch/alpine container
 ├── docker-compose.yml           # Compose specification
 ├── Makefile                     # Build, test, and run automation
+├── build.ps1                    # Windows PowerShell build utility
+├── go.mod                       # Go module definition (zero external dependencies)
+├── CODE_OF_CONDUCT.md           # Contributor Covenant Code of Conduct v2.1
+├── CONTRIBUTING.md              # Contributor guidelines and workflow
+├── SECURITY.md                  # Security policy, threat model, and disclosure process
 ├── LICENSE                      # MIT License
 └── README.md                    # Project documentation
 ```
+
+---
+
+## 🔒 Security & Privacy
+
+- **Local-First Execution**: In default mode, VeriFact processes all claims locally on your machine with **zero external network requests or third-party API exposure**.
+- **Safe Credential Handling**: When optional LLM judging is enabled, API keys are passed strictly in-memory and are never cached, persisted, or displayed in output logs.
+- For vulnerability reporting and our security policy, please review [SECURITY.md](SECURITY.md).
+
+---
+
+## 🤝 Contributing
+
+Contributions, bug reports, and suggestions are welcome! Please check our [CONTRIBUTING.md](CONTRIBUTING.md) guide and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
 ---
 
