@@ -66,7 +66,7 @@ jobs:
       run: GOOS=windows GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o dist/hallucidetect-windows-amd64.exe ./cmd/hallucidetect
 
     - name: Upload Binaries Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: hallucidetect-binaries
         path: dist/
