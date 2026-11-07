@@ -1,4 +1,4 @@
-# 🛡️ VeriFact / HalluciDetect
+# 🛡️ LLM Hallucination Detector (VeriFact)
 
 [![CI Pipeline](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Security Policy](https://img.shields.io/badge/security-monitored-blue.svg)](SECURITY.md)
