@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
 	"strings"
@@ -30,34 +31,40 @@ const (
 )
 
 func main() {
-	if len(os.Args) < 2 {
-		printUsage()
-		os.Exit(0)
+	os.Exit(execute(os.Args[1:], os.Stdout, os.Stderr))
+}
+
+func execute(args []string, stdout, stderr io.Writer) int {
+	if len(args) < 1 {
+		printUsage(stdout)
+		return 0
 	}
 
-	command := os.Args[1]
+	command := args[0]
 
 	switch command {
 	case "check":
-		runCheck(os.Args[2:])
+		return runCheck(args[1:], stdout, stderr)
 	case "serve":
-		runServe(os.Args[2:])
+		return runServe(args[1:], stdout, stderr)
 	case "benchmark":
-		runBenchmark(os.Args[2:])
+		return runBenchmark(args[1:], stdout, stderr)
 	case "version":
-		fmt.Printf("HalluciDetect / VeriFact version %s\n", Version)
+		fmt.Fprintf(stdout, "HalluciDetect / VeriFact version %s\n", Version)
+		return 0
 	case "help", "-h", "--help":
-		printUsage()
+		printUsage(stdout)
+		return 0
 	default:
-		fmt.Fprintf(os.Stderr, "Unknown command: %q\n\n", command)
-		printUsage()
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Unknown command: %q\n\n", command)
+		printUsage(stderr)
+		return 1
 	}
 }
 
-func printUsage() {
-	fmt.Printf(BannerArt, Version)
-	fmt.Print(`
+func printUsage(w io.Writer) {
+	fmt.Fprintf(w, BannerArt, Version)
+	fmt.Fprint(w, `
 USAGE:
   hallucidetect <command> [arguments]
 
@@ -82,8 +89,9 @@ EXAMPLES:
 `)
 }
 
-func runCheck(args []string) {
-	fs := flag.NewFlagSet("check", flag.ExitOnError)
+func runCheck(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("check", flag.ContinueOnError)
+	fs.SetOutput(stderr)
 
 	sourceArg := fs.String("source", "", "Source text string or path to source document file")
 	sourceShort := fs.String("s", "", "Short alias for --source")
@@ -101,7 +109,9 @@ func runCheck(args []string) {
 	outShort := fs.String("o", "", "Short alias for --output")
 	noColor := fs.Bool("no-color", false, "Disable ANSI color formatting")
 
-	_ = fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
 
 	sourceText := *sourceArg
 	if sourceText == "" {
@@ -124,8 +134,8 @@ func runCheck(args []string) {
 	}
 
 	if sourceText == "" || answerText == "" {
-		fmt.Fprintln(os.Stderr, "Error: Both --source (-s) and --answer (-a) must be specified.")
-		os.Exit(1)
+		fmt.Fprintln(stderr, "Error: Both --source (-s) and --answer (-a) must be specified.")
+		return 1
 	}
 
 	// Read file contents if argument corresponds to an existing file
@@ -141,8 +151,8 @@ func runCheck(args []string) {
 	detector := engine.NewDetector(opts)
 	res, err := detector.Verify(context.Background(), answerContent, sourceContent)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error during verification: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Error during verification: %v\n", err)
+		return 1
 	}
 
 	var output string
@@ -160,35 +170,39 @@ func runCheck(args []string) {
 	if destination != "" {
 		err := os.WriteFile(destination, []byte(output), 0644)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to write report to %s: %v\n", destination, err)
-			os.Exit(1)
+			fmt.Fprintf(stderr, "Failed to write report to %s: %v\n", destination, err)
+			return 1
 		}
-		fmt.Printf("Report successfully written to: %s\n", destination)
+		fmt.Fprintf(stdout, "Report successfully written to: %s\n", destination)
 	} else {
-		fmt.Println(output)
+		fmt.Fprintln(stdout, output)
 	}
 
 	if *failOnHallucination && (res.Verdict == "UNRELIABLE" || res.ContradictedClaims > 0) {
-		os.Exit(1)
+		return 1
 	}
+	return 0
 }
 
-func runServe(args []string) {
-	fs := flag.NewFlagSet("serve", flag.ExitOnError)
+func runServe(args []string, stdout, stderr io.Writer) int {
+	fs := flag.NewFlagSet("serve", flag.ContinueOnError)
+	fs.SetOutput(stderr)
 	port := fs.Int("port", 8080, "Port to listen on")
 	host := fs.String("host", "127.0.0.1", "Host interface to bind")
-	_ = fs.Parse(args)
+	if err := fs.Parse(args); err != nil {
+		return 1
+	}
 
 	addr := fmt.Sprintf("%s:%d", *host, *port)
 	handler := api.NewHandler(Version)
 	staticFS := web.GetStaticFS()
 	router := api.SetupRouter(handler, staticFS)
 
-	fmt.Printf(BannerArt, Version)
-	fmt.Printf(">> Web UI Dashboard:   http://%s/\n", addr)
-	fmt.Printf(">> REST API Endpoint:  http://%s/api/v1/verify\n", addr)
-	fmt.Printf(">> Healthcheck:        http://%s/api/v1/health\n\n", addr)
-	fmt.Println("Server is ready and listening for verification requests (Ctrl+C to stop)...")
+	fmt.Fprintf(stdout, BannerArt, Version)
+	fmt.Fprintf(stdout, ">> Web UI Dashboard:   http://%s/\n", addr)
+	fmt.Fprintf(stdout, ">> REST API Endpoint:  http://%s/api/v1/verify\n", addr)
+	fmt.Fprintf(stdout, ">> Healthcheck:        http://%s/api/v1/health\n\n", addr)
+	fmt.Fprintln(stdout, "Server is ready and listening for verification requests (Ctrl+C to stop)...")
 
 	server := &http.Server{
 		Addr:         addr,
@@ -198,14 +212,15 @@ func runServe(args []string) {
 	}
 
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		fmt.Fprintf(os.Stderr, "Server failed: %v\n", err)
-		os.Exit(1)
+		fmt.Fprintf(stderr, "Server failed: %v\n", err)
+		return 1
 	}
+	return 0
 }
 
-func runBenchmark(args []string) {
-	fmt.Printf(BannerArt, Version)
-	fmt.Println("Running Built-In Hallucination Benchmark Test Suite...")
+func runBenchmark(args []string, stdout, stderr io.Writer) int {
+	fmt.Fprintf(stdout, BannerArt, Version)
+	fmt.Fprintln(stdout, "Running Built-In Hallucination Benchmark Test Suite...")
 
 	testCases := []struct {
 		Name          string
@@ -244,24 +259,25 @@ The observatory operates around the Sun-Earth L2 Lagrange point about 1.5 millio
 	detector := engine.NewDetector(opts)
 
 	for i, tc := range testCases {
-		fmt.Printf("[%d/%d] Testing: %s... ", i+1, len(testCases), tc.Name)
+		fmt.Fprintf(stdout, "[%d/%d] Testing: %s... ", i+1, len(testCases), tc.Name)
 		res, err := detector.Verify(context.Background(), tc.Answer, tc.Source)
 		if err != nil {
-			fmt.Printf("FAILED (error: %v)\n", err)
+			fmt.Fprintf(stdout, "FAILED (error: %v)\n", err)
 			continue
 		}
 
 		match := (res.Verdict == tc.ExpectedState) || (tc.ExpectedState == "UNRELIABLE" && res.Verdict == "NEEDS_REVIEW")
 		if match {
-			fmt.Printf("PASS (Verdict: %s, Faithfulness: %.0f%%)\n", res.Verdict, res.FaithfulnessScore*100)
+			fmt.Fprintf(stdout, "PASS (Verdict: %s, Faithfulness: %.0f%%)\n", res.Verdict, res.FaithfulnessScore*100)
 			passed++
 		} else {
-			fmt.Printf("FAIL (Expected %s, got %s)\n", tc.ExpectedState, res.Verdict)
+			fmt.Fprintf(stdout, "FAIL (Expected %s, got %s)\n", tc.ExpectedState, res.Verdict)
 		}
 	}
 
-	fmt.Printf("\nBenchmark Complete: %d/%d test suites passed (%.0f%% accuracy).\n",
+	fmt.Fprintf(stdout, "\nBenchmark Complete: %d/%d test suites passed (%.0f%% accuracy).\n",
 		passed, len(testCases), float64(passed)/float64(len(testCases))*100)
+	return 0
 }
 
 func readFileOrString(input string) string {
