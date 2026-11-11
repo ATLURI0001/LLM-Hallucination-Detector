@@ -56,3 +56,14 @@ The company has 80,000 employees globally.`
 		t.Errorf("expected UNRELIABLE or NEEDS_REVIEW, got %s", res.Verdict)
 	}
 }
+
+func TestDetectorCanceledContext(t *testing.T) {
+	detector := NewDetector(DefaultVerificationOptions())
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	res, err := detector.Verify(ctx, "The sky is blue and grass is green.", "The sky is blue.")
+	if err != context.Canceled {
+		t.Fatalf("expected context.Canceled, got err=%v res=%v", err, res)
+	}
+}

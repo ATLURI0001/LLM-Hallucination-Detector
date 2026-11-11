@@ -36,6 +36,9 @@ func NewDetector(opts VerificationOptions) *Detector {
 
 // Verify checks an AI answer against one or more trusted source documents.
 func (d *Detector) Verify(ctx context.Context, answerText, sourceText string) (*VerificationResult, error) {
+	if ctx != nil && ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 	startTime := time.Now()
 
 	// 1. Index trusted source documents
