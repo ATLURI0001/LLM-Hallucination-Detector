@@ -45,3 +45,20 @@ func TestExtractNumericTokens(t *testing.T) {
 		t.Fatalf("expected %d tokens, got %d: %v", len(expected), len(tokens), tokens)
 	}
 }
+
+func TestSplitIntoSentences_UnicodeRuneOffsets(t *testing.T) {
+	extractor := NewExtractor(5)
+	// Leading multi-byte Unicode whitespace U+2003 (3 UTF-8 bytes, 1 rune) before claim
+	text := "\u2003Café revenue rose 20% in Q4."
+	sentences := extractor.splitIntoSentences(text)
+	if len(sentences) != 1 {
+		t.Fatalf("expected 1 sentence, got %d", len(sentences))
+	}
+	if sentences[0].Start != 1 {
+		t.Fatalf("expected rune start offset 1, got %d", sentences[0].Start)
+	}
+	expectedRunes := len([]rune("Café revenue rose 20% in Q4."))
+	if sentences[0].End-sentences[0].Start != expectedRunes {
+		t.Fatalf("expected rune length %d, got %d", expectedRunes, sentences[0].End-sentences[0].Start)
+	}
+}

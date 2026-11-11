@@ -20,6 +20,9 @@ var (
 	
 	// Regex to extract capitalized proper nouns / named entity candidates
 	properNounRegex = regexp.MustCompile(`\b[A-Z][a-z0-9]+(?:\s+[A-Z][a-z0-9]+)*\b`)
+
+	// Compiled once to avoid re-compiling inside sentence loops
+	listMarkerRegex = regexp.MustCompile(`^([\*\-•]|\d+[\.\)])\s+`)
 )
 
 // Extractor decomposes raw AI-generated text into verifiable claims.
@@ -133,7 +136,9 @@ func (e *Extractor) splitIntoSentences(text string) []RawSentence {
 			subStr := string(runes[start:endIdx])
 			trimmed := strings.TrimSpace(subStr)
 			if trimmed != "" {
-				actualStart := start + strings.Index(subStr, trimmed)
+				byteLead := strings.Index(subStr, trimmed)
+				runeLead := len([]rune(subStr[:byteLead]))
+				actualStart := start + runeLead
 				actualEnd := actualStart + len([]rune(trimmed))
 
 				sentences = append(sentences, RawSentence{
@@ -151,7 +156,9 @@ func (e *Extractor) splitIntoSentences(text string) []RawSentence {
 		subStr := string(runes[start:n])
 		trimmed := strings.TrimSpace(subStr)
 		if trimmed != "" {
-			actualStart := start + strings.Index(subStr, trimmed)
+			byteLead := strings.Index(subStr, trimmed)
+			runeLead := len([]rune(subStr[:byteLead]))
+			actualStart := start + runeLead
 			actualEnd := actualStart + len([]rune(trimmed))
 			sentences = append(sentences, RawSentence{
 				Text:  trimmed,
@@ -174,7 +181,6 @@ func getLastWord(s string) string {
 
 func cleanLeadingListMarkers(s string) string {
 	s = strings.TrimLeft(s, " \t\r\n")
-	listMarkerRegex := regexp.MustCompile(`^([\*\-•]|\d+[\.\)])\s+`)
 	return listMarkerRegex.ReplaceAllString(s, "")
 }
 
