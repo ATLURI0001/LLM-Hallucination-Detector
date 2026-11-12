@@ -218,8 +218,15 @@ func (idx *InvertedIndex) SearchBM25(query string, topK int) []ScoredChunk {
 			tf := float64(c.TermFreqs[token])
 			docLen := float64(c.WordCount)
 
+			lengthRatio := 1.0
+			if idx.avgDocLen > 0 {
+				lengthRatio = docLen / idx.avgDocLen
+			}
 			numerator := tf * (idx.k1 + 1.0)
-			denominator := tf + idx.k1*(1.0-idx.b+idx.b*(docLen/idx.avgDocLen))
+			denominator := tf + idx.k1*(1.0-idx.b+idx.b*lengthRatio)
+			if denominator <= 0 {
+				continue
+			}
 			bm25Term := idf * (numerator / denominator)
 
 			scores[chunkID] += bm25Term
@@ -235,6 +242,9 @@ func (idx *InvertedIndex) SearchBM25(query string, topK int) []ScoredChunk {
 	}
 
 	sort.Slice(ranked, func(i, j int) bool {
+		if ranked[i].Score == ranked[j].Score {
+			return ranked[i].Chunk.ID < ranked[j].Chunk.ID
+		}
 		return ranked[i].Score > ranked[j].Score
 	})
 
