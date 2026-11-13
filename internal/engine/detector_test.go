@@ -2,6 +2,7 @@ package engine
 
 import (
 	"context"
+	"math"
 	"testing"
 )
 
@@ -65,5 +66,41 @@ func TestDetectorCanceledContext(t *testing.T) {
 	res, err := detector.Verify(ctx, "The sky is blue and grass is green.", "The sky is blue.")
 	if err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got err=%v res=%v", err, res)
+	}
+}
+
+func TestDetectNumericEquivalence(t *testing.T) {
+	h := NewHeuristicVerifier(true)
+	// Claim uses 10.0 and $420.00 while evidence uses 10 and 420
+	discrepancies := h.detectNumericDiscrepancy(
+		"Company revenue was $420.00 million with 10.0 percent margin.",
+		"Company revenue was 420 million with 10 percent margin.",
+	)
+	if len(discrepancies) != 0 {
+		t.Errorf("expected 0 discrepancies for equivalent numeric representations, got %v", discrepancies)
+	}
+
+	// Real mismatch: 420 vs 450
+	mismatches := h.detectNumericDiscrepancy(
+		"Company revenue was $450 million.",
+		"Company revenue was $420 million.",
+	)
+	if len(mismatches) == 0 {
+		t.Errorf("expected numeric discrepancy for 450 vs 420, got none")
+	}
+}
+
+func TestHeuristicThresholdBounds(t *testing.T) {
+	h := NewHeuristicVerifier(true)
+	c := Claim{Text: "The sky is blue"}
+	ev := &Evidence{
+		Snippet:         "The sky is blue and clear.",
+		SimilarityScore: 0.85,
+	}
+
+	// NaN threshold should be sanitized to default without failing comparisons
+	resNaN := h.VerifyClaim(c, ev, "The sky is blue and clear.", math.NaN())
+	if resNaN.Status != StatusSupported {
+		t.Errorf("expected supported claim with NaN threshold, got %s", resNaN.Status)
 	}
 }
