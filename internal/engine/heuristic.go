@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -11,6 +12,18 @@ import (
 )
 
 var (
+	wordRegex = regexp.MustCompile(`[\p{L}\p{N}]+`)
+
+	magnitudeMultiplier = map[string]float64{
+		"k":        1e3,
+		"m":        1e6,
+		"million":  1e6,
+		"b":        1e9,
+		"bn":       1e9,
+		"billion":  1e9,
+		"trillion": 1e12,
+	}
+
 	negationWords = map[string]bool{
 		"not": true, "never": true, "no": true, "none": true, "neither": true,
 		"unable": true, "failed": true, "denied": true, "prohibited": true,
@@ -53,6 +66,12 @@ func NewHeuristicVerifier(strictNumeric bool) *HeuristicVerifier {
 
 // VerifyClaim evaluates a single claim against candidate evidence and full source text.
 func (h *HeuristicVerifier) VerifyClaim(claim Claim, evidence *Evidence, fullSourceText string, threshold float64) Claim {
+	if math.IsNaN(threshold) || threshold <= 0 {
+		threshold = 0.50
+	} else if threshold > 1.0 {
+		threshold = 1.0
+	}
+
 	// If no evidence was retrieved at all
 	if evidence == nil || evidence.SimilarityScore < 0.05 {
 		claim.Status = StatusUnsupported
@@ -125,6 +144,33 @@ func (h *HeuristicVerifier) VerifyClaim(claim Claim, evidence *Evidence, fullSou
 	return claim
 }
 
+type parsedNumber struct {
+	val  float64
+	unit string
+}
+
+func parseNumberValue(s string) (parsedNumber, bool) {
+	norm := normalizeNumberToken(s)
+	fields := strings.Fields(norm)
+	if len(fields) == 0 {
+		return parsedNumber{}, false
+	}
+	numStr := strings.TrimSuffix(fields[0], ".")
+	val, err := strconv.ParseFloat(numStr, 64)
+	if err != nil || math.IsNaN(val) || math.IsInf(val, 0) {
+		return parsedNumber{}, false
+	}
+	unit := ""
+	if len(fields) > 1 {
+		unit = fields[1]
+	}
+	if mult, ok := magnitudeMultiplier[unit]; ok {
+		val *= mult
+		unit = ""
+	}
+	return parsedNumber{val: val, unit: unit}, true
+}
+
 // detectNumericDiscrepancy checks if numbers in the claim diverge from numbers in the evidence.
 func (h *HeuristicVerifier) detectNumericDiscrepancy(claimText, evidenceText string) []NumericComparison {
 	claimNums := claim.ExtractNumericTokens(claimText)
@@ -138,8 +184,13 @@ func (h *HeuristicVerifier) detectNumericDiscrepancy(claimText, evidenceText str
 	}
 
 	evidenceSet := make(map[string]bool)
+	evidenceValues := make(map[parsedNumber]bool)
 	for _, n := range evidenceNums {
-		evidenceSet[normalizeNumberToken(n)] = true
+		norm := normalizeNumberToken(n)
+		evidenceSet[norm] = true
+		if pn, ok := parseNumberValue(norm); ok {
+			evidenceValues[pn] = true
+		}
 	}
 
 	var discrepancies []NumericComparison
@@ -148,17 +199,23 @@ func (h *HeuristicVerifier) detectNumericDiscrepancy(claimText, evidenceText str
 		if normCN == "" {
 			continue
 		}
-		// If the exact number token is not in the evidence snippet
-		if !evidenceSet[normCN] {
-			// Find nearest evidence number for explanation
-			bestEv := evidenceNums[0]
-			discrepancies = append(discrepancies, NumericComparison{
-				ClaimToken:    strings.TrimSpace(cn),
-				EvidenceToken: strings.TrimSpace(bestEv),
-				Context:       fmt.Sprintf("Claim has %s vs Evidence %s", cn, bestEv),
-				Discrepancy:   fmt.Sprintf("Numerical mismatch: %s != %s", cn, bestEv),
-			})
+		// If exact string matches, continue
+		if evidenceSet[normCN] {
+			continue
 		}
+		// If equivalent parsed number matches (e.g. 10.0 vs 10, or $420.00 million vs 420 million), continue
+		if pn, ok := parseNumberValue(normCN); ok && evidenceValues[pn] {
+			continue
+		}
+
+		// Find nearest evidence number for explanation
+		bestEv := evidenceNums[0]
+		discrepancies = append(discrepancies, NumericComparison{
+			ClaimToken:    strings.TrimSpace(cn),
+			EvidenceToken: strings.TrimSpace(bestEv),
+			Context:       fmt.Sprintf("Claim has %s vs Evidence %s", cn, bestEv),
+			Discrepancy:   fmt.Sprintf("Numerical mismatch: %s != %s", cn, bestEv),
+		})
 	}
 
 	return discrepancies
@@ -239,8 +296,7 @@ func (h *HeuristicVerifier) detectPolarityInversion(claimText, evidenceText stri
 }
 
 func tokenizeWords(s string) []string {
-	words := regexp.MustCompile(`[\p{L}\p{N}]+`).FindAllString(strings.ToLower(s), -1)
-	return words
+	return wordRegex.FindAllString(strings.ToLower(s), -1)
 }
 
 func hasNegation(words []string) bool {
