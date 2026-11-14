@@ -118,3 +118,19 @@ func TestFormatMarkdown(t *testing.T) {
 		t.Errorf("expected claim text in details table")
 	}
 }
+
+func TestFormatters_NilResult(t *testing.T) {
+	if out := report.FormatTerminal(nil, false); out != "" {
+		t.Errorf("expected empty string for nil FormatTerminal, got %q", out)
+	}
+	if out := report.FormatMarkdown(nil); out != "" {
+		t.Errorf("expected empty string for nil FormatMarkdown, got %q", out)
+	}
+	jsonOut, err := report.FormatJSON(nil)
+	if err != nil {
+		t.Errorf("unexpected error on nil FormatJSON: %v", err)
+	}
+	if jsonOut != "null\n" {
+		t.Errorf("expected null\\n for nil FormatJSON, got %q", jsonOut)
+	}
+}

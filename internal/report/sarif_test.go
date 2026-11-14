@@ -67,3 +67,10 @@ func TestFormatSARIF(t *testing.T) {
 		t.Errorf("expected at least 1 finding for contradicted claim in SARIF results")
 	}
 }
+
+func TestFormatSARIF_NilResult(t *testing.T) {
+	_, err := report.FormatSARIF(nil, "")
+	if err == nil {
+		t.Fatalf("expected error when passing nil result to FormatSARIF")
+	}
+}
