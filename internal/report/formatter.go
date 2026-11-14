@@ -24,6 +24,9 @@ const (
 
 // FormatTerminal creates a beautiful colorized terminal report.
 func FormatTerminal(res *models.VerificationResult, noColor bool) string {
+	if res == nil {
+		return ""
+	}
 	cRed := colorRed
 	cGreen := colorGreen
 	cYellow := colorYellow
@@ -116,6 +119,9 @@ func FormatTerminal(res *models.VerificationResult, noColor bool) string {
 
 // FormatMarkdown generates a GitHub-flavored Markdown audit report.
 func FormatMarkdown(res *models.VerificationResult) string {
+	if res == nil {
+		return ""
+	}
 	var sb strings.Builder
 
 	sb.WriteString("# 🛡️ LLM Hallucination & Fact Verification Report\n\n")
@@ -207,6 +213,9 @@ func FormatMarkdown(res *models.VerificationResult) string {
 
 // FormatJSON produces pretty-printed JSON output.
 func FormatJSON(res *models.VerificationResult) (string, error) {
+	if res == nil {
+		return "null\n", nil
+	}
 	var buf bytes.Buffer
 	enc := json.NewEncoder(&buf)
 	enc.SetIndent("", "  ")

@@ -61,6 +61,9 @@ type SarifLocation struct {
 
 // FormatSARIF converts verification results into standard SARIF format for CI/CD analysis.
 func FormatSARIF(res *models.VerificationResult, filename string) (string, error) {
+	if res == nil {
+		return "", fmt.Errorf("result cannot be nil")
+	}
 	if filename == "" {
 		filename = "ai_generated_response.txt"
 	}
