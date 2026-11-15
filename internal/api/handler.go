@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/ATLURI0001/llm-hallucination-detector/internal/claim"
@@ -26,6 +27,11 @@ func NewHandler(version string) *Handler {
 
 // HandleHealth handles GET /api/v1/health
 func (h *Handler) HandleHealth(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+		return
+	}
+
 	resp := HealthResponse{
 		Status:    "healthy",
 		Version:   h.version,
@@ -42,17 +48,19 @@ func (h *Handler) HandleVerify(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
 	var req VerifyRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid JSON request body: "+err.Error())
 		return
 	}
 
-	if req.AnswerText == "" {
+	if strings.TrimSpace(req.AnswerText) == "" {
 		writeError(w, http.StatusBadRequest, "Field 'answer_text' is required")
 		return
 	}
-	if req.SourceText == "" {
+	if strings.TrimSpace(req.SourceText) == "" {
 		writeError(w, http.StatusBadRequest, "Field 'source_text' is required")
 		return
 	}
@@ -79,15 +87,21 @@ func (h *Handler) HandleExtractClaims(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	r.Body = http.MaxBytesReader(w, r.Body, 10<<20)
+
 	var req ExtractClaimsRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid JSON request body: "+err.Error())
 		return
 	}
 
-	if req.Text == "" {
+	if strings.TrimSpace(req.Text) == "" {
 		writeError(w, http.StatusBadRequest, "Field 'text' is required")
 		return
+	}
+
+	if req.MinClaimLength < 0 {
+		req.MinClaimLength = 0
 	}
 
 	extractor := claim.NewExtractor(req.MinClaimLength)

@@ -36,6 +36,14 @@ func TestHandleHealth(t *testing.T) {
 	if resp.Timestamp == "" || resp.Uptime == "" {
 		t.Errorf("expected non-empty timestamp and uptime")
 	}
+
+	// MethodNotAllowed on POST /health
+	postReq := httptest.NewRequest(http.MethodPost, "/api/v1/health", nil)
+	postW := httptest.NewRecorder()
+	handler.HandleHealth(postW, postReq)
+	if postW.Code != http.StatusMethodNotAllowed {
+		t.Errorf("expected 405 MethodNotAllowed on POST health, got %d", postW.Code)
+	}
 }
 
 func TestHandleVerify(t *testing.T) {
@@ -86,6 +94,20 @@ func TestHandleVerify(t *testing.T) {
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("WhitespaceOnlyTexts", func(t *testing.T) {
+		body, _ := json.Marshal(api.VerifyRequest{
+			AnswerText: "   \t\n",
+			SourceText: "   ",
+		})
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/verify", bytes.NewReader(body))
+		w := httptest.NewRecorder()
+		handler.HandleVerify(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400 on whitespace only inputs, got %d", w.Code)
 		}
 	})
 
