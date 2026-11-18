@@ -151,3 +151,34 @@ func TestFormatters_MultiByteUnicodeSnippetTruncation(t *testing.T) {
 		t.Errorf("expected truncated snippet to contain ellipsis in markdown report")
 	}
 }
+
+func TestFormatters_EmptyClaimsAndTableNewlineSanitization(t *testing.T) {
+	emptyRes := sampleResult()
+	emptyRes.Claims = nil
+	emptyRes.TotalClaims = 0
+	emptyRes.SupportedClaims = 0
+
+	termOut := report.FormatTerminal(emptyRes, true)
+	if !strings.Contains(termOut, "No factual claims extracted or evaluated") {
+		t.Errorf("expected empty claims placeholder in terminal report, got: %s", termOut)
+	}
+
+	mdOut := report.FormatMarkdown(emptyRes)
+	if !strings.Contains(mdOut, "*No factual claims extracted*") {
+		t.Errorf("expected empty claims row in markdown table, got: %s", mdOut)
+	}
+	if !strings.Contains(mdOut, "*All extracted claims are verified and grounded in source evidence.*") {
+		t.Errorf("expected verified notice when no flagged claims exist, got: %s", mdOut)
+	}
+
+	// Verify newline replacement in claim text
+	multilineRes := sampleResult()
+	multilineRes.Claims[0].Text = "Claim with\nembedded\rnewlines."
+	mdMultiline := report.FormatMarkdown(multilineRes)
+	if strings.Contains(mdMultiline, "Claim with\nembedded") {
+		t.Errorf("expected newlines to be sanitized in markdown table row")
+	}
+	if !strings.Contains(mdMultiline, "Claim with embedded newlines.") {
+		t.Errorf("expected space-separated claim text in table row, got: %s", mdMultiline)
+	}
+}
