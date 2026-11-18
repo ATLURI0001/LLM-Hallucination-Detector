@@ -111,6 +111,17 @@ func TestHandleVerify(t *testing.T) {
 		}
 	})
 
+	t.Run("TrailingJSONPayload", func(t *testing.T) {
+		payload := `{"answer_text":"Apple reported $90B.","source_text":"Apple reported $90B."} {"extra":"payload"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/verify", bytes.NewBufferString(payload))
+		w := httptest.NewRecorder()
+		handler.HandleVerify(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400 on trailing JSON payload, got %d", w.Code)
+		}
+	})
+
 	t.Run("SuccessfulVerification", func(t *testing.T) {
 		body, _ := json.Marshal(api.VerifyRequest{
 			AnswerText: "Apple reported $90 billion revenue.",
@@ -157,6 +168,17 @@ func TestHandleExtractClaims(t *testing.T) {
 
 		if w.Code != http.StatusBadRequest {
 			t.Errorf("expected 400, got %d", w.Code)
+		}
+	})
+
+	t.Run("TrailingJSONPayload", func(t *testing.T) {
+		payload := `{"text":"Google was founded in 1998."} {"extra":"payload"}`
+		req := httptest.NewRequest(http.MethodPost, "/api/v1/extract", bytes.NewBufferString(payload))
+		w := httptest.NewRecorder()
+		handler.HandleExtractClaims(w, req)
+
+		if w.Code != http.StatusBadRequest {
+			t.Errorf("expected 400 on trailing JSON payload, got %d", w.Code)
 		}
 	})
 
