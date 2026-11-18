@@ -225,8 +225,12 @@ func normalizeNumberToken(s string) string {
 	s = strings.ToLower(strings.TrimSpace(s))
 	s = strings.ReplaceAll(s, ",", "")
 	s = strings.ReplaceAll(s, "$", "")
+	s = strings.ReplaceAll(s, "€", "")
+	s = strings.ReplaceAll(s, "£", "")
+	s = strings.ReplaceAll(s, "¥", "")
 	s = strings.ReplaceAll(s, "%", "")
-	return s
+	s = strings.ReplaceAll(s, "percent", "")
+	return strings.TrimSpace(s)
 }
 
 // findMissingEntities detects proper nouns in the claim that are never mentioned in the source.
