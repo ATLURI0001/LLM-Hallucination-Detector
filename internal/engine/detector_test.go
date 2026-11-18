@@ -104,3 +104,14 @@ func TestHeuristicThresholdBounds(t *testing.T) {
 		t.Errorf("expected supported claim with NaN threshold, got %s", resNaN.Status)
 	}
 }
+
+func TestDetectMultiCurrencyAndPercentEquivalence(t *testing.T) {
+	h := NewHeuristicVerifier(true)
+	discrepancies := h.detectNumericDiscrepancy(
+		"Company revenue was €420.00 million with £50.0 million in profits and 15 percent margin.",
+		"Company revenue was €420 million with £50 million in profits and 15% margin.",
+	)
+	if len(discrepancies) != 0 {
+		t.Errorf("expected 0 discrepancies for equivalent currency and percent representations, got %v", discrepancies)
+	}
+}
