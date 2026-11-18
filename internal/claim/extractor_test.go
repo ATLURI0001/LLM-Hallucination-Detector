@@ -2,6 +2,8 @@ package claim
 
 import (
 	"testing"
+
+	"github.com/ATLURI0001/llm-hallucination-detector/internal/models"
 )
 
 func TestExtractClaims(t *testing.T) {
@@ -95,5 +97,45 @@ func TestExtractClaims_ExtendedBulletMarkers(t *testing.T) {
 	}
 	if claims[2].Text != "Third milestone underway." {
 		t.Errorf("claim 2 mismatch: %q", claims[2].Text)
+	}
+}
+
+func TestExtractorHelpersAndFilterClaims(t *testing.T) {
+	ext := NewExtractor(18)
+	if ext.MinClaimLength() != 18 {
+		t.Fatalf("expected minClaimLength 18, got %d", ext.MinClaimLength())
+	}
+	var nilExt *Extractor
+	if nilExt.MinClaimLength() != 12 {
+		t.Fatalf("expected nil Extractor default 12, got %d", nilExt.MinClaimLength())
+	}
+
+	// Meta talk detection
+	if !IsMetaTalk("Here is the requested summary:") {
+		t.Error("expected meta-talk to be detected")
+	}
+	if !IsMetaTalk("Certainly! Let me explain:") {
+		t.Error("expected conversational opener to be detected")
+	}
+	if IsMetaTalk("Apollo 11 landed on the Moon in July 1969.") {
+		t.Error("factual claim should not be detected as meta-talk")
+	}
+
+	// FilterClaims
+	claims := []models.Claim{
+		{ID: 1, Text: "High confidence claim", Confidence: 0.95},
+		{ID: 2, Text: "Low confidence claim", Confidence: 0.40},
+		{ID: 3, Text: "Borderline claim", Confidence: 0.65},
+	}
+	filtered := FilterClaims(claims, 0.65)
+	if len(filtered) != 2 {
+		t.Fatalf("expected 2 filtered claims, got %d", len(filtered))
+	}
+	if filtered[0].ID != 1 || filtered[1].ID != 3 {
+		t.Errorf("unexpected filtered claim IDs: %v", filtered)
+	}
+
+	if FilterClaims(nil, 0.5) != nil {
+		t.Error("expected nil for empty claims slice")
 	}
 }

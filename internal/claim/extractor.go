@@ -49,6 +49,14 @@ func NewExtractor(minClaimLength int) *Extractor {
 	}
 }
 
+// MinClaimLength returns the minimum character threshold configured for this extractor.
+func (e *Extractor) MinClaimLength() int {
+	if e == nil {
+		return 12
+	}
+	return e.minClaimLength
+}
+
 // RawSentence represents a sentence slice with text offsets.
 type RawSentence struct {
 	Text  string
@@ -205,6 +213,25 @@ func isMetaTalk(s string) bool {
 		}
 	}
 	return false
+}
+
+// IsMetaTalk reports whether the candidate text represents AI meta-talk or introductory conversational filler.
+func IsMetaTalk(s string) bool {
+	return isMetaTalk(s)
+}
+
+// FilterClaims returns only the claims that meet or exceed the specified confidence threshold.
+func FilterClaims(claims []models.Claim, minConfidence float64) []models.Claim {
+	if len(claims) == 0 {
+		return nil
+	}
+	filtered := make([]models.Claim, 0, len(claims))
+	for _, c := range claims {
+		if c.Confidence >= minConfidence {
+			filtered = append(filtered, c)
+		}
+	}
+	return filtered
 }
 
 // ExtractEntities finds numbers, dates, and proper noun candidates.
