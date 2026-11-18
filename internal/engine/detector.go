@@ -74,15 +74,24 @@ func (d *Detector) Verify(ctx context.Context, answerText, sourceText string) (*
 		wg.Add(1)
 		go func(idxNum int, rawClaim Claim) {
 			defer wg.Done()
+			if ctx != nil && ctx.Err() != nil {
+				return
+			}
 
 			// Retrieve best corroborating evidence passage
 			evidence := idx.FindBestEvidence(rawClaim.Text)
+			if ctx != nil && ctx.Err() != nil {
+				return
+			}
 
 			// Step A: Heuristic Rule-Based Verification
 			verdictClaim := d.heuristic.VerifyClaim(rawClaim, evidence, sourceText, d.options.Threshold)
 
 			// Step B: Optional LLM Judge Deep Entailment Check
 			if d.llmJudge != nil && d.options.EnableLLMJudge && evidence != nil {
+				if ctx != nil && ctx.Err() != nil {
+					return
+				}
 				// Invoke LLM judge for borderline or disputed claims
 				if verdictClaim.Status != StatusSupported || verdictClaim.Confidence < 0.85 {
 					resp, err := d.llmJudge.EvaluateEntailment(ctx, evidence.Snippet, rawClaim.Text)
@@ -100,6 +109,9 @@ func (d *Detector) Verify(ctx context.Context, answerText, sourceText string) (*
 	}
 
 	wg.Wait()
+	if ctx != nil && ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 
 	// 4. Aggregate metrics and scoring
 	var (

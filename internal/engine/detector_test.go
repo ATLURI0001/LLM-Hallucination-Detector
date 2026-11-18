@@ -67,6 +67,14 @@ func TestDetectorCanceledContext(t *testing.T) {
 	if err != context.Canceled {
 		t.Fatalf("expected context.Canceled, got err=%v res=%v", err, res)
 	}
+
+	// Mid-flight canceled context
+	ctxMid, cancelMid := context.WithCancel(context.Background())
+	cancelMid()
+	resMid, errMid := detector.Verify(ctxMid, "Claim one is here. Claim two is also here. Claim three is present.", "Source text is available.")
+	if errMid != context.Canceled {
+		t.Fatalf("expected context.Canceled for mid-flight cancellation, got err=%v res=%v", errMid, resMid)
+	}
 }
 
 func TestDetectNumericEquivalence(t *testing.T) {
