@@ -62,3 +62,38 @@ func TestSplitIntoSentences_UnicodeRuneOffsets(t *testing.T) {
 		t.Fatalf("expected rune length %d, got %d", expectedRunes, sentences[0].End-sentences[0].Start)
 	}
 }
+
+func TestSplitIntoSentences_SmartQuotesAndClosers(t *testing.T) {
+	extractor := NewExtractor(5)
+	text := "The analyst stated: “Revenue exceeded $10 million.” Then growth accelerated."
+	sentences := extractor.splitIntoSentences(text)
+	if len(sentences) != 2 {
+		t.Fatalf("expected 2 sentences across smart quote boundary, got %d: %v", len(sentences), sentences)
+	}
+	if sentences[0].Text != "The analyst stated: “Revenue exceeded $10 million.”" {
+		t.Errorf("sentence 0 mismatch, got %q", sentences[0].Text)
+	}
+	if sentences[1].Text != "Then growth accelerated." {
+		t.Errorf("sentence 1 mismatch, got %q", sentences[1].Text)
+	}
+}
+
+func TestExtractClaims_ExtendedBulletMarkers(t *testing.T) {
+	extractor := NewExtractor(5)
+	text := `– First milestone completed.
+— Second milestone approved.
+> Third milestone underway.`
+	claims := extractor.ExtractClaims(text)
+	if len(claims) != 3 {
+		t.Fatalf("expected 3 claims from dash and quote bullets, got %d", len(claims))
+	}
+	if claims[0].Text != "First milestone completed." {
+		t.Errorf("claim 0 mismatch: %q", claims[0].Text)
+	}
+	if claims[1].Text != "Second milestone approved." {
+		t.Errorf("claim 1 mismatch: %q", claims[1].Text)
+	}
+	if claims[2].Text != "Third milestone underway." {
+		t.Errorf("claim 2 mismatch: %q", claims[2].Text)
+	}
+}
