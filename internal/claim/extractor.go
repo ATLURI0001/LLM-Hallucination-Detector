@@ -22,8 +22,17 @@ var (
 	properNounRegex = regexp.MustCompile(`\b[A-Z][a-z0-9]+(?:\s+[A-Z][a-z0-9]+)*\b`)
 
 	// Compiled once to avoid re-compiling inside sentence loops
-	listMarkerRegex = regexp.MustCompile(`^([\*\-•]|\d+[\.\)])\s+`)
+	listMarkerRegex = regexp.MustCompile(`^([>\*\-•–—▪▫◦]|\d+[\.\)])\s+`)
 )
+
+func isQuoteOrCloser(r rune) bool {
+	switch r {
+	case '"', '\'', '”', '’', '»', ')', ']', '}':
+		return true
+	default:
+		return false
+	}
+}
 
 // Extractor decomposes raw AI-generated text into verifiable claims.
 type Extractor struct {
@@ -109,8 +118,8 @@ func (e *Extractor) splitIntoSentences(text string) []RawSentence {
 
 		isTerminator := false
 		if r == '.' || r == '!' || r == '?' {
-			// Check if next character is space, quote, or end of text
-			if i+1 == n || unicode.IsSpace(runes[i+1]) || runes[i+1] == '"' || runes[i+1] == '\'' {
+			// Check if next character is space, quote/closer, or end of text
+			if i+1 == n || unicode.IsSpace(runes[i+1]) || isQuoteOrCloser(runes[i+1]) {
 				prefix := string(runes[start : i+1])
 				lastWord := getLastWord(prefix)
 				if !abbreviationRegex.MatchString(lastWord) {
@@ -129,7 +138,7 @@ func (e *Extractor) splitIntoSentences(text string) []RawSentence {
 
 		if isTerminator && i >= start {
 			endIdx := i + 1
-			for endIdx < n && (runes[endIdx] == '"' || runes[endIdx] == '\'' || runes[endIdx] == ')' || runes[endIdx] == ']') {
+			for endIdx < n && isQuoteOrCloser(runes[endIdx]) {
 				endIdx++
 			}
 
