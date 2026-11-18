@@ -50,6 +50,7 @@ func NewInvertedIndex() *InvertedIndex {
 
 // AddDocument parses, chunks, and indexes a source document text.
 func (idx *InvertedIndex) AddDocument(docID string, text string) {
+	docID = strings.TrimSpace(docID)
 	if strings.TrimSpace(text) == "" {
 		return
 	}
@@ -79,26 +80,34 @@ func (idx *InvertedIndex) chunkDocument(docID string, text string) []Chunk {
 	for i := 0; i < n; i++ {
 		r := runes[i]
 		isEnd := false
+		endRune := i + 1
 		if r == '.' || r == '!' || r == '?' {
-			if i+1 == n || unicode.IsSpace(runes[i+1]) {
+			j := i + 1
+			for j < n && (runes[j] == '"' || runes[j] == '\'' || runes[j] == '”' || runes[j] == '’' || runes[j] == '»' || runes[j] == ')' || runes[j] == ']') {
+				j++
+			}
+			if j == n || unicode.IsSpace(runes[j]) {
 				isEnd = true
+				endRune = j
 			}
 		} else if r == '\n' {
 			if i+1 < n && runes[i+1] == '\n' {
 				isEnd = true
+				endRune = i + 1
 			}
 		}
 
 		if isEnd && i >= start {
-			s := strings.TrimSpace(string(runes[start : i+1]))
+			s := strings.TrimSpace(string(runes[start:endRune]))
 			if len(s) > 5 {
 				sentences = append(sentences, span{
 					start: start,
-					end:   i + 1,
+					end:   endRune,
 					text:  s,
 				})
 			}
-			start = i + 1
+			start = endRune
+			i = endRune - 1
 		}
 	}
 	if start < n {

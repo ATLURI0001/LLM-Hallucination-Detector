@@ -62,3 +62,26 @@ func TestSearchBM25ZeroAvgDocLenAndDeterministicTieBreak(t *testing.T) {
 		t.Fatalf("expected positive non-NaN score on zero avgDocLen chunk, got %+v", res)
 	}
 }
+
+func TestChunkDocument_ClosingQuotesAndTrimmedDocID(t *testing.T) {
+	idx := NewInvertedIndex()
+	text := `The CEO said, "Our quarterly profits doubled." Next quarter projections remain high.`
+	idx.AddDocument("  doc_quoted  ", text)
+
+	if len(idx.chunks) == 0 {
+		t.Fatal("expected chunks, got none")
+	}
+
+	foundQuoted := false
+	for _, c := range idx.chunks {
+		if c.DocumentID != "doc_quoted" {
+			t.Fatalf("expected DocumentID to be trimmed, got %q", c.DocumentID)
+		}
+		if c.Text == `The CEO said, "Our quarterly profits doubled."` {
+			foundQuoted = true
+		}
+	}
+	if !foundQuoted {
+		t.Fatalf("expected quote-terminated sentence chunk, but chunks were: %+v", idx.chunks)
+	}
+}
