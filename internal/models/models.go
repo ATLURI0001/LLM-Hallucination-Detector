@@ -1,6 +1,9 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 // ClaimStatus represents the verification state of a claim against source documents.
 type ClaimStatus string
@@ -59,6 +62,16 @@ type Claim struct {
 	NumericDiscrepant []NumericComparison `json:"numeric_discrepancies,omitempty"`
 }
 
+// IsHallucination reports whether the claim has contradicted or unsupported status.
+func (c Claim) IsHallucination() bool {
+	return c.Status == StatusContradicted || c.Status == StatusUnsupported
+}
+
+// IsReliable reports whether the claim is fully supported.
+func (c Claim) IsReliable() bool {
+	return c.Status == StatusSupported
+}
+
 // VerificationOptions configures the detector engine.
 type VerificationOptions struct {
 	Threshold                float64 `json:"threshold"`                  // Overlap / confidence threshold (default: 0.65)
@@ -68,6 +81,19 @@ type VerificationOptions struct {
 	LLMModel                 string  `json:"llm_model,omitempty"`        // Model identifier (e.g. gemini-2.5-flash)
 	LLMBaseURL               string  `json:"llm_base_url,omitempty"`     // Custom base URL (e.g. Ollama or proxy)
 	MinClaimLength           int     `json:"min_claim_length"`           // Minimum character length for valid claim
+}
+
+// Normalize clamps numerical values to valid ranges and trims credential and endpoint strings.
+func (o *VerificationOptions) Normalize() {
+	if o.Threshold <= 0.0 || o.Threshold > 1.0 {
+		o.Threshold = 0.65
+	}
+	if o.MinClaimLength <= 0 {
+		o.MinClaimLength = 12
+	}
+	o.LLMAPIKey = strings.TrimSpace(o.LLMAPIKey)
+	o.LLMModel = strings.TrimSpace(o.LLMModel)
+	o.LLMBaseURL = strings.TrimSpace(o.LLMBaseURL)
 }
 
 // DefaultVerificationOptions returns standard tuned parameters.
@@ -99,4 +125,12 @@ type VerificationResult struct {
 	Summary                 string              `json:"summary"`
 	ProcessingTimeMs        int64               `json:"processing_time_ms"`
 	OptionsUsed             VerificationOptions `json:"options_used"`
+}
+
+// HasHallucinations reports whether any contradicted or unsupported claims were detected.
+func (r *VerificationResult) HasHallucinations() bool {
+	if r == nil {
+		return false
+	}
+	return r.ContradictedClaims > 0 || r.UnsupportedClaims > 0
 }
