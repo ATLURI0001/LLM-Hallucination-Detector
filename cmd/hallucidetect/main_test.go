@@ -62,6 +62,8 @@ func TestExecute_CheckMissingArgs(t *testing.T) {
 		{"missing both", []string{"check"}},
 		{"missing answer", []string{"check", "-s", "some source"}},
 		{"missing source", []string{"check", "-a", "some answer"}},
+		{"whitespace source", []string{"check", "-s", "   ", "-a", "some answer"}},
+		{"whitespace answer", []string{"check", "-s", "some source", "-a", " \t "}},
 	}
 
 	for _, tt := range tests {
@@ -142,5 +144,27 @@ func TestExecute_Benchmark(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "Benchmark Complete:") {
 		t.Fatalf("expected 'Benchmark Complete:' in output, got: %s", stdout.String())
+	}
+}
+
+func TestExecute_CheckInvalidThreshold(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := execute([]string{"check", "-s", "abc", "-a", "abc", "-threshold", "1.5"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("expected exit code 1 for invalid threshold, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "Threshold must be between 0.0 and 1.0") {
+		t.Fatalf("expected threshold range error, got: %s", stderr.String())
+	}
+}
+
+func TestExecute_ServeInvalidPort(t *testing.T) {
+	var stdout, stderr bytes.Buffer
+	code := execute([]string{"serve", "-port", "-5"}, &stdout, &stderr)
+	if code != 1 {
+		t.Fatalf("expected exit code 1 for invalid port, got %d", code)
+	}
+	if !strings.Contains(stderr.String(), "Invalid port") {
+		t.Fatalf("expected port range error, got: %s", stderr.String())
 	}
 }

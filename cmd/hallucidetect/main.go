@@ -113,28 +113,33 @@ func runCheck(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	sourceText := *sourceArg
+	sourceText := strings.TrimSpace(*sourceArg)
 	if sourceText == "" {
-		sourceText = *sourceShort
+		sourceText = strings.TrimSpace(*sourceShort)
 	}
 
-	answerText := *answerArg
+	answerText := strings.TrimSpace(*answerArg)
 	if answerText == "" {
-		answerText = *answerShort
+		answerText = strings.TrimSpace(*answerShort)
 	}
 
-	fmtMode := *format
+	fmtMode := strings.ToLower(strings.TrimSpace(*format))
 	if fmtMode == "table" && *formatShort != "table" {
-		fmtMode = *formatShort
+		fmtMode = strings.ToLower(strings.TrimSpace(*formatShort))
 	}
 
-	destination := *outFile
+	destination := strings.TrimSpace(*outFile)
 	if destination == "" {
-		destination = *outShort
+		destination = strings.TrimSpace(*outShort)
 	}
 
 	if sourceText == "" || answerText == "" {
 		fmt.Fprintln(stderr, "Error: Both --source (-s) and --answer (-a) must be specified.")
+		return 1
+	}
+
+	if *threshold < 0.0 || *threshold > 1.0 {
+		fmt.Fprintf(stderr, "Error: Threshold must be between 0.0 and 1.0, got %f\n", *threshold)
 		return 1
 	}
 
@@ -193,7 +198,17 @@ func runServe(args []string, stdout, stderr io.Writer) int {
 		return 1
 	}
 
-	addr := fmt.Sprintf("%s:%d", *host, *port)
+	cleanHost := strings.TrimSpace(*host)
+	if cleanHost == "" {
+		cleanHost = "127.0.0.1"
+	}
+
+	if *port < 1 || *port > 65535 {
+		fmt.Fprintf(stderr, "Error: Invalid port %d (must be between 1 and 65535)\n", *port)
+		return 1
+	}
+
+	addr := fmt.Sprintf("%s:%d", cleanHost, *port)
 	handler := api.NewHandler(Version)
 	staticFS := web.GetStaticFS()
 	router := api.SetupRouter(handler, staticFS)
