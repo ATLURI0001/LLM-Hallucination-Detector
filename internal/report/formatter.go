@@ -84,6 +84,11 @@ func FormatTerminal(res *models.VerificationResult, noColor bool) string {
 	sb.WriteString(cBold + "CLAIMS VERIFICATION BREAKDOWN:\n" + cReset)
 	sb.WriteString(strings.Repeat("-", 80) + "\n")
 
+	if len(res.Claims) == 0 {
+		sb.WriteString("  (No factual claims extracted or evaluated)\n")
+		sb.WriteString(strings.Repeat("-", 80) + "\n")
+	}
+
 	for _, c := range res.Claims {
 		badgeColor := cGreen
 		switch c.Status {
@@ -169,6 +174,10 @@ func FormatMarkdown(res *models.VerificationResult) string {
 	sb.WriteString("| ID | Claim Proposition | Status | Type | Confidence | Grounding Evidence |\n")
 	sb.WriteString("| :-: | :--- | :--- | :--- | :-: | :--- |\n")
 
+	if len(res.Claims) == 0 {
+		sb.WriteString("| - | *No factual claims extracted* | - | - | - | - |\n")
+	}
+
 	for _, c := range res.Claims {
 		badge := "🟢 Supported"
 		switch c.Status {
@@ -183,35 +192,52 @@ func FormatMarkdown(res *models.VerificationResult) string {
 		evidenceText := "*No grounding found*"
 		if c.BestEvidence != nil {
 			snip := strings.ReplaceAll(c.BestEvidence.Snippet, "|", "\\|")
+			snip = strings.ReplaceAll(snip, "\r\n", " ")
+			snip = strings.ReplaceAll(snip, "\r", " ")
 			snip = strings.ReplaceAll(snip, "\n", " ")
 			snip = truncateRunes(snip, 120)
 			evidenceText = fmt.Sprintf("\"%s\"", snip)
 		}
 
 		claimText := strings.ReplaceAll(c.Text, "|", "\\|")
+		claimText = strings.ReplaceAll(claimText, "\r\n", " ")
+		claimText = strings.ReplaceAll(claimText, "\r", " ")
+		claimText = strings.ReplaceAll(claimText, "\n", " ")
 
 		sb.WriteString(fmt.Sprintf("| #%d | %s | **%s** | `%s` | %.0f%% | %s |\n",
 			c.ID, claimText, badge, c.HallucinationType, c.Confidence*100, evidenceText))
 	}
 
-	sb.WriteString("\n## 🔬 Evidence Citations & Rationales\n\n")
+	var hasFlaggedClaims bool
 	for _, c := range res.Claims {
 		if c.Status != models.StatusSupported {
-			sb.WriteString(fmt.Sprintf("### Claim #%d: *\"%s\"*\n", c.ID, c.Text))
-			sb.WriteString(fmt.Sprintf("- **Status:** `%s` (%s)\n", c.Status, c.HallucinationType))
-			sb.WriteString(fmt.Sprintf("- **Analysis:** %s\n", c.Explanation))
-			if len(c.NumericDiscrepant) > 0 {
-				for _, nd := range c.NumericDiscrepant {
-					sb.WriteString(fmt.Sprintf("- **Numeric Discrepancy:** Claim stated `%s`, source reported `%s`\n", nd.ClaimToken, nd.EvidenceToken))
+			hasFlaggedClaims = true
+			break
+		}
+	}
+
+	sb.WriteString("\n## 🔬 Evidence Citations & Rationales\n\n")
+	if !hasFlaggedClaims {
+		sb.WriteString("*All extracted claims are verified and grounded in source evidence.*\n")
+	} else {
+		for _, c := range res.Claims {
+			if c.Status != models.StatusSupported {
+				sb.WriteString(fmt.Sprintf("### Claim #%d: *\"%s\"*\n", c.ID, c.Text))
+				sb.WriteString(fmt.Sprintf("- **Status:** `%s` (%s)\n", c.Status, c.HallucinationType))
+				sb.WriteString(fmt.Sprintf("- **Analysis:** %s\n", c.Explanation))
+				if len(c.NumericDiscrepant) > 0 {
+					for _, nd := range c.NumericDiscrepant {
+						sb.WriteString(fmt.Sprintf("- **Numeric Discrepancy:** Claim stated `%s`, source reported `%s`\n", nd.ClaimToken, nd.EvidenceToken))
+					}
 				}
+				if len(c.MissingEntities) > 0 {
+					sb.WriteString(fmt.Sprintf("- **Missing Entities:** `%s` not found in source text\n", strings.Join(c.MissingEntities, ", ")))
+				}
+				if c.BestEvidence != nil {
+					sb.WriteString(fmt.Sprintf("- **Best Source Passage:** > %s\n", c.BestEvidence.Snippet))
+				}
+				sb.WriteString("\n")
 			}
-			if len(c.MissingEntities) > 0 {
-				sb.WriteString(fmt.Sprintf("- **Missing Entities:** `%s` not found in source text\n", strings.Join(c.MissingEntities, ", ")))
-			}
-			if c.BestEvidence != nil {
-				sb.WriteString(fmt.Sprintf("- **Best Source Passage:** > %s\n", c.BestEvidence.Snippet))
-			}
-			sb.WriteString("\n")
 		}
 	}
 
