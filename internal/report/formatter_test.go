@@ -134,3 +134,20 @@ func TestFormatters_NilResult(t *testing.T) {
 		t.Errorf("expected null\\n for nil FormatJSON, got %q", jsonOut)
 	}
 }
+
+func TestFormatters_MultiByteUnicodeSnippetTruncation(t *testing.T) {
+	res := sampleResult()
+	// Multi-byte snippet exceeding truncation limits (e.g., 200 repetitions of multi-byte euro/emoji/accent chars)
+	longSnippet := strings.Repeat("€ 🚀 Café—", 40)
+	res.Claims[0].BestEvidence.Snippet = longSnippet
+
+	termOut := report.FormatTerminal(res, true)
+	if !strings.Contains(termOut, "...") {
+		t.Errorf("expected truncated snippet to contain ellipsis in terminal report")
+	}
+
+	mdOut := report.FormatMarkdown(res)
+	if !strings.Contains(mdOut, "...") {
+		t.Errorf("expected truncated snippet to contain ellipsis in markdown report")
+	}
+}

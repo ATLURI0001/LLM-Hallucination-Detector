@@ -22,6 +22,17 @@ const (
 	colorDim    = "\033[2m"
 )
 
+func truncateRunes(s string, maxRunes int) string {
+	runes := []rune(s)
+	if len(runes) <= maxRunes {
+		return s
+	}
+	if maxRunes <= 3 {
+		return string(runes[:maxRunes])
+	}
+	return string(runes[:maxRunes-3]) + "..."
+}
+
 // FormatTerminal creates a beautiful colorized terminal report.
 func FormatTerminal(res *models.VerificationResult, noColor bool) string {
 	if res == nil {
@@ -105,9 +116,7 @@ func FormatTerminal(res *models.VerificationResult, noColor bool) string {
 
 		if c.BestEvidence != nil {
 			snippet := strings.TrimSpace(c.BestEvidence.Snippet)
-			if len(snippet) > 160 {
-				snippet = snippet[:157] + "..."
-			}
+			snippet = truncateRunes(snippet, 160)
 			sb.WriteString(fmt.Sprintf("    %sSource Grounding:%s \"%s\"\n", cDim, cReset, snippet))
 		}
 
@@ -175,9 +184,7 @@ func FormatMarkdown(res *models.VerificationResult) string {
 		if c.BestEvidence != nil {
 			snip := strings.ReplaceAll(c.BestEvidence.Snippet, "|", "\\|")
 			snip = strings.ReplaceAll(snip, "\n", " ")
-			if len(snip) > 120 {
-				snip = snip[:117] + "..."
-			}
+			snip = truncateRunes(snip, 120)
 			evidenceText = fmt.Sprintf("\"%s\"", snip)
 		}
 
