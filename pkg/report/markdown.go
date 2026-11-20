@@ -1,7 +1,6 @@
 package report
 
 import (
-	"fmt"
 	"strings"
 )
 
@@ -18,18 +17,15 @@ func (t MarkdownTable) Render() string {
 	}
 
 	var sb strings.Builder
-	sb.WriteString("| " + strings.Join(t.Headers, " | ") + " |
-")
+	sb.WriteString("| " + strings.Join(t.Headers, " | ") + " |\n")
 	var sep []string
 	for range t.Headers {
 		sep = append(sep, "---")
 	}
-	sb.WriteString("| " + strings.Join(sep, " | ") + " |
-")
+	sb.WriteString("| " + strings.Join(sep, " | ") + " |\n")
 
 	for _, row := range t.Rows {
-		sb.WriteString("| " + strings.Join(row, " | ") + " |
-")
+		sb.WriteString("| " + strings.Join(row, " | ") + " |\n")
 	}
 	return sb.String()
 }
